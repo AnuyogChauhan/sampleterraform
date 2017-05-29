@@ -1,3 +1,11 @@
+provider "openstack" {
+  user_name   = "admin"
+  tenant_name = "admin"
+  password    = "mypass"
+  auth_url    = "http://172.19.74.170:5000/v2.0"
+  domain_name = "default"
+}
+
 resource "openstack_compute_keypair_v2" "terraform" {
   name       = "terraform"
   public_key = "${file("${var.ssh_key_file}.pub")}"
