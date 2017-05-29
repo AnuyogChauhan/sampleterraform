@@ -7,7 +7,7 @@ variable "flavor" {
 }
 
 variable "ssh_key_file" {
-  default = "/root/.ssh/id_rsa"
+  default = "/tmp/sshkey/id_rsa"
 }
 
 variable "ssh_user_name" {
