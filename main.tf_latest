@@ -1,0 +1,177 @@
+resource "openstack_compute_keypair_v2" "terraform" {
+  name       = "terraform"
+  public_key = "${file("${var.ssh_key_file}.pub")}"
+}
+
+resource "openstack_networking_network_v2" "terraform" {
+  name           = "terraform"
+  admin_state_up = "true"
+}
+
+resource "openstack_networking_subnet_v2" "terraform" {
+  name            = "terraform"
+  network_id      = "${openstack_networking_network_v2.terraform.id}"
+  cidr            = "20.0.0.0/24"
+  ip_version      = 4
+  dns_nameservers = ["8.8.8.8", "8.8.4.4"]
+}
+
+resource "openstack_networking_router_v2" "terraform" {
+  name             = "terraform"
+  admin_state_up   = "true"
+#  external_gateway = "${var.external_gateway}"
+}
+
+resource "openstack_networking_router_interface_v2" "terraform" {
+  router_id = "${openstack_networking_router_v2.terraform.id}"
+  subnet_id = "${openstack_networking_subnet_v2.terraform.id}"
+}
+
+resource "openstack_compute_secgroup_v2" "terraform" {
+  name        = "terraform"
+  description = "Security group for the Terraform example instances"
+
+  rule {
+    from_port   = 22
+    to_port     = 22
+    ip_protocol = "tcp"
+    cidr        = "0.0.0.0/0"
+  }
+
+  rule {
+    from_port   = 80
+    to_port     = 80
+    ip_protocol = "tcp"
+    cidr        = "0.0.0.0/0"
+  }
+
+  rule {
+    from_port   = -1
+    to_port     = -1
+    ip_protocol = "icmp"
+    cidr        = "0.0.0.0/0"
+  }
+}
+
+resource "openstack_compute_floatingip_v2" "terraform" {
+  pool       = "${var.pool}"
+  depends_on = ["openstack_networking_router_interface_v2.terraform"]
+}
+
+resource "openstack_compute_instance_v2" "terraform" {
+  name            = "terraform"
+  image_name      = "${var.image}"
+  flavor_name     = "${var.flavor}"
+  key_pair        = "${openstack_compute_keypair_v2.terraform.name}"
+  security_groups = ["${openstack_compute_secgroup_v2.terraform.name}"]
+  floating_ip     = "${openstack_compute_floatingip_v2.terraform.address}"
+
+  network {
+    uuid = "${openstack_networking_network_v2.terraform.id}"
+  }
+  provisioner "file" {
+    source      = "nginx.yml"
+    destination = "/tmp/nginx.yml"
+    connection {
+      user     = "${var.ssh_user_name}"
+      private_key = "${file(var.ssh_key_file)}"
+
+  }
+}
+  provisioner "file" {
+    source      = "apt.conf"
+    destination = "/tmp/apt.conf"
+    connection {
+      user     = "${var.ssh_user_name}"
+      private_key = "${file(var.ssh_key_file)}"
+
+  }
+}
+  provisioner "file" {
+    source      = "hosts"
+    destination = "/tmp/hosts"
+    connection {
+      user     = "${var.ssh_user_name}"
+      private_key = "${file(var.ssh_key_file)}"
+
+  }
+}
+  provisioner "remote-exec" {
+    connection {
+      user     = "${var.ssh_user_name}"
+      private_key = "${file(var.ssh_key_file)}"
+    }
+
+    inline = [
+#      "chmod +x /tmp/print.sh",
+#      "/tmp/print.sh args",
+      "export http_proxy=http://165.225.104.34:80/",
+      "export https_proxy=https://165.225.104.34:80",
+      "export no_proxy=localhost,127.0.0.1,15.*,16.*,172*",
+      "wget google.com",
+#      "sed -i '/$/a 127.0.1.1 terraform' /etc/hosts",
+#      "sudo touch /etc/apt/apt.conf;",
+#      "touch /etc/apt/apt.conf",
+#      "sudo chmod 777 /etc/apt/apt.conf",
+      "sudo chmod 777 /etc/apt",
+      "sudo mv /tmp/apt.conf /etc/apt/",
+#      "cat /etc/apt/apt.conf",
+#      "sudo sed -i '/$/a Acquire::http::proxy 'http://165.225.104.34:80';' /etc/apt/apt.conf",
+#      "sudo sed -i '/$/a Acquire::https::proxy 'https://165.225.104.34:80';' /etc/apt/apt.conf",
+      "cat /etc/apt/apt.conf",
+       "sudo chmod 777 /var",
+       "sudo chmod 777 /var/lib/dpkg/lock",
+       "sudo chmod 777 /var/cache/apt/",
+       "sudo chmod 777 /var/lib/dpkg",
+       "sudo chmod 777 /var/cache/apt/archives/lock",
+#      "chmod +x /tmp/print.sh",
+      "sudo chmod 777 /var/cache/apt/archives/partial/",
+#      "/tmp/print.sh args",
+       "sudo apt-get install -y ansible",
+       "ansible-playbook -i '/tmp/hosts,' -c local /tmp/nginx.yml",
+#       "ansible-playbook -i '172.19.74.188,' /tmp/nginx.yml",
+#      "chmod 777 /etc/environment",
+#      "sed -i '/$/a export http_proxy=http://165.225.104.34:80/' /etc/environment",
+#      "sed -i '/$/a export https_proxy=https://165.225.104.34:80/' /etc/environment",
+#      "sed -i '/$/a export no_proxy=localhost,127.0.0.1,15.*,16.*,172*' /etc/environment",
+#      ". /etc/environment",
+    ]
+}
+}
+
+#  provisioner "remote-exec" {
+#    connection {
+#      user     = "${var.ssh_user_name}"
+#      private_key = "${file(var.ssh_key_file)}"
+#    }
+#    inline = [
+#      "export http_proxy=http://165.225.104.34:80/",
+#      "export https_proxy=https://165.225.104.34:80",
+#      "export no_proxy=localhost,127.0.0.1,15.*,16.*,172*",
+#      "chmod 777 /etc/environment",
+#      "sed -i '/$/a export http_proxy=http://165.225.104.34:80/' /etc/environment",
+#      "sed -i '/$/a export https_proxy=https://165.225.104.34:80/' /etc/environment",
+#      "sed -i '/$/a export no_proxy=localhost,127.0.0.1,15.*,16.*,172*' /etc/environment",
+#      ". /etc/environment",
+#      "sudo apt-get -y update",
+#      "sudo apt-get -y install nginx",
+#      "sudo service nginx status",
+#    ]
+#}
+#  provisioner "file" {
+#    source      = "print.sh"
+#    destination = "/tmp/print.sh"
+#  }
+
+#  provisioner "remote-exec" {
+#    inline = [
+#      "chmod +x /tmp/print.sh",
+#      "/tmp/print.sh args",
+#      "export http_proxy=http://165.225.104.34:80/",
+#      "export https_proxy=https://165.225.104.34:80",
+#      "export no_proxy=localhost,127.0.0.1,15.*,16.*,172*",
+#      "sudo apt-get -y update",
+#      "sudo apt-get -y install nginx",
+#      "sudo service nginx status",
+#    ]
+#  }

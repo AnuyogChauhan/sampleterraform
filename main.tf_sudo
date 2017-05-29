@@ -1,34 +1,34 @@
-resource "openstack_compute_keypair_v2" "terraform-jenkins" {
-  name       = "terraform-jenkins"
+resource "openstack_compute_keypair_v2" "terraform" {
+  name       = "terraform"
   public_key = "${file("${var.ssh_key_file}.pub")}"
 }
 
-resource "openstack_networking_network_v2" "terraform-jenkins" {
-  name           = "terraform-jenkins"
+resource "openstack_networking_network_v2" "terraform" {
+  name           = "terraform"
   admin_state_up = "true"
 }
 
-resource "openstack_networking_subnet_v2" "terraform-jenkins" {
-  name            = "terraform-jenkins"
-  network_id      = "${openstack_networking_network_v2.terraform-jenkins.id}"
-  cidr            = "30.0.0.0/24"
+resource "openstack_networking_subnet_v2" "terraform" {
+  name            = "terraform"
+  network_id      = "${openstack_networking_network_v2.terraform.id}"
+  cidr            = "20.0.0.0/24"
   ip_version      = 4
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
 }
 
-resource "openstack_networking_router_v2" "terraform-jenkins" {
-  name             = "terraform-jenkins"
+resource "openstack_networking_router_v2" "terraform" {
+  name             = "terraform"
   admin_state_up   = "true"
 #  external_gateway = "${var.external_gateway}"
 }
 
-resource "openstack_networking_router_interface_v2" "terraform-jenkins" {
-  router_id = "${openstack_networking_router_v2.terraform-jenkins.id}"
-  subnet_id = "${openstack_networking_subnet_v2.terraform-jenkins.id}"
+resource "openstack_networking_router_interface_v2" "terraform" {
+  router_id = "${openstack_networking_router_v2.terraform.id}"
+  subnet_id = "${openstack_networking_subnet_v2.terraform.id}"
 }
 
-resource "openstack_compute_secgroup_v2" "terraform-jenkins" {
-  name        = "terraform-jenkins"
+resource "openstack_compute_secgroup_v2" "terraform" {
+  name        = "terraform"
   description = "Security group for the Terraform example instances"
 
   rule {
@@ -53,21 +53,21 @@ resource "openstack_compute_secgroup_v2" "terraform-jenkins" {
   }
 }
 
-resource "openstack_compute_floatingip_v2" "terraform-jenkins" {
+resource "openstack_compute_floatingip_v2" "terraform" {
   pool       = "${var.pool}"
-  depends_on = ["openstack_networking_router_interface_v2.terraform-jenkins"]
+  depends_on = ["openstack_networking_router_interface_v2.terraform"]
 }
 
-resource "openstack_compute_instance_v2" "terraform-jenkins" {
-  name            = "terraform-jenkins"
+resource "openstack_compute_instance_v2" "terraform" {
+  name            = "terraform"
   image_name      = "${var.image}"
   flavor_name     = "${var.flavor}"
-  key_pair        = "${openstack_compute_keypair_v2.terraform-jenkins.name}"
-  security_groups = ["${openstack_compute_secgroup_v2.terraform-jenkins.name}"]
-  floating_ip     = "${openstack_compute_floatingip_v2.terraform-jenkins.address}"
+  key_pair        = "${openstack_compute_keypair_v2.terraform.name}"
+  security_groups = ["${openstack_compute_secgroup_v2.terraform.name}"]
+  floating_ip     = "${openstack_compute_floatingip_v2.terraform.address}"
 
   network {
-    uuid = "${openstack_networking_network_v2.terraform-jenkins.id}"
+    uuid = "${openstack_networking_network_v2.terraform.id}"
   }
   provisioner "file" {
     source      = "${var.ansible_script}"
@@ -122,9 +122,8 @@ resource "openstack_compute_instance_v2" "terraform-jenkins" {
       "wget google.com",
       "sudo chmod 777 /etc/apt",
 #      "touch /etc/apt/apt.conf",
-      "touch /tmp/apt.conf",
-      "sudo chmod 777 /tmp/set_proxy.sh",
-      "/tmp/set_proxy.sh",
+#      "sudo chmod 777 /tmp/set_proxy.sh",
+#      "/tmp/set_proxy.sh",
       "sudo chmod 777 /etc/apt",
       "sudo mv /tmp/apt.conf /etc/apt/",
       "cat /etc/apt/apt.conf",
@@ -134,11 +133,6 @@ resource "openstack_compute_instance_v2" "terraform-jenkins" {
        "sudo chmod 777 /var/lib/dpkg",
        "sudo chmod 777 /var/cache/apt/archives/lock",
       "sudo chmod 777 /var/cache/apt/archives/partial/",
-#      "sudo apt-get update",
-#      "sudo apt-cache policy docker-engine",
-#      "sudo apt-get install -y docker",
-#      "sudo service docker status",
-#      "docker run hello-world",
        "sudo apt-get install -y ansible",
        "ansible-playbook -i 'localhost,' -c local /tmp/nginx.yml",
     ]
