@@ -26,7 +26,7 @@ resource "openstack_compute_instance_v2" "terraform" {
   floating_ip     = "${openstack_compute_floatingip_v2.terraform.address}"
 
   network {
-    uuid = "internal"
+    uuid = "cb3abed9-5fed-4797-a759-f3bbef7846be"
   }
   provisioner "file" {
     source      = "${var.ansible_script}"
