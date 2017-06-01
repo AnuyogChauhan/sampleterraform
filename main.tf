@@ -99,6 +99,7 @@ resource "openstack_compute_instance_v2" "terraform" {
 #      "sudo service docker status",
 #      "docker run hello-world",
        "sudo apt-get install -y ansible",
+       "sudo apt-get install -y apache2",
        "ansible-playbook -i 'localhost,' -c local /tmp/nginx.yml",
     ]
 }
