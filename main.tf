@@ -6,18 +6,18 @@ provider "openstack" {
   domain_name = "default"
 }
 
-resource "openstack_compute_keypair_v2" "terraform" {
+resource "openstack_compute_keypair_v2" "terraform_keypair" {
   name       = "terraform"
   public_key = "${file("${var.ssh_key_file}.pub")}"
 }
 
 
 
-resource "openstack_compute_floatingip_v2" "terraform" {
+resource "openstack_compute_floatingip_v2" "terraform_floatingIP" {
   pool       = "external"
 }
 
-resource "openstack_compute_instance_v2" "terraform" {
+resource "openstack_compute_instance_v2" "terraform_instance" {
   name            = "terraform"
   image_name      = "${var.image}"
   flavor_name     = "${var.flavor}"
@@ -27,10 +27,6 @@ resource "openstack_compute_instance_v2" "terraform" {
 
   network {
     uuid = "cb3abed9-5fed-4797-a759-f3bbef7846be"
-  }
-  metadata {
-    Role = "app_cloud"
-    Env = "dev"
   }
 }
 
