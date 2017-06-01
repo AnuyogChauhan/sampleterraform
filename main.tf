@@ -28,7 +28,7 @@ resource "openstack_compute_instance_v2" "terraform" {
   network {
     uuid = "cb3abed9-5fed-4797-a759-f3bbef7846be"
   }
-  tags = {
+  metadata {
     Role = "app_cloud"
     Env = "dev"
   }
