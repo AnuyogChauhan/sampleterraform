@@ -4,6 +4,8 @@
   tasks:
     - name: Installs nginx web server
       apt: pkg=nginx state=installed update_cache=true force=yes
+      environment:
+        http_proxy: http://165.225.104.34:80
       notify:
         - start nginx
 
