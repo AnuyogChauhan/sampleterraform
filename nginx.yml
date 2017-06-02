@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: terraform_newinstance
   sudo: yes
   tasks:
     - name: Installs nginx web server
